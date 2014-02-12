@@ -22,7 +22,10 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 
 	public static final int ALARM_RUNNING = 10;
 	public static final int ALARM_STOPPED = 11;
-	private int status = ALARM_STOPPED;
+	public static final int ALARM_SERVICE_NOT_BOUND = 12;
+	public static final int ALARM_SERVICE_STARTED = 13;
+
+	private int status = ALARM_SERVICE_NOT_BOUND;
 	private Calendar alarmStartTime;
 	private long numberOfBeeps = 0;
 
@@ -55,10 +58,16 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 		public void run() {
 
 			if (mIsAlarmRunning) {
-				int threadID = android.os.Process.myTid();
-				MyLog.i("AlarmService", "Alarm running from threadID: " + threadID);
-				soundAlarm();
 				numberOfBeeps++;
+				int threadID = android.os.Process.myTid();
+				StringBuilder sb = new StringBuilder();
+				sb.append("Alarm running: threadID = ");
+				sb.append(threadID);
+				sb.append("; Number of Beeps = ");
+				sb.append(numberOfBeeps);
+				MyLog.i("AlarmService", sb.toString());
+				//soundAlarm();
+
 				mHeartbeatHandler.postDelayed(this, 5000);
 			}
 		}
@@ -80,18 +89,20 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 	public class UpdateBinderProxy extends IAlarmService.Stub {
 
 		@Override
-		public void getGoodbye() throws RemoteException {
-			AlarmService.this.getGoodbye();
-		}
-
-		@Override
-		public String getHello() throws RemoteException {
-			return AlarmService.this.getHello();
-		}
-
-		@Override
 		public Bundle getStatus() throws RemoteException {
 			return AlarmService.this.getStatus();
+		}
+
+		@Override
+		public void startAlarm() throws RemoteException {
+			AlarmService.this.startAlarm();
+
+		}
+
+		@Override
+		public void stopAlarm() throws RemoteException {
+			AlarmService.this.stopAlarm();
+
 		}
 	}
 
@@ -118,7 +129,7 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		MyLog.d("AlarmService", "onStartCommand() intent: " + intent);
-
+		status = ALARM_STOPPED;
 		// START_NOT_STICKY - Icky We want to live on, live free!
 		return START_STICKY;
 	}
@@ -127,13 +138,15 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 	@Override
 	public IBinder onBind(Intent intent) {
 		MyLog.d("AlarmService", "onBind() intent: " + intent);
-		startAlarm();
+		status = ALARM_STOPPED;
 		return new UpdateBinderProxy();
+
 	}
 
 	@Override
 	public boolean onUnbind(Intent intent) {
 		MyLog.d("AlarmService", "onUnbind() intent: " + intent);
+		status = ALARM_SERVICE_NOT_BOUND;
 		return super.onUnbind(intent);
 	}
 
@@ -143,9 +156,9 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 		//stopAlarm();
 
 		// LEARN: We are forcing an exit here just to show the :service process disappears
-		if (!mIsAlarmRunning) {
-			System.exit(0);
-		}
+		/*		if (!mIsAlarmRunning) {
+					System.exit(0);
+				}*/
 
 	}
 
@@ -154,21 +167,25 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 	 * 
 	 * @return
 	 */
-	public void getGoodbye() {
-		MyLog.d("AlarmService", "getGoodbye()");
-		Intent goodbyeIntent = new Intent();
-		goodbyeIntent.setAction("com.lbconsulting.homework253_lorenbak.GOODBYE");
-		this.sendBroadcast(goodbyeIntent);
-	}
+	/*	public void getGoodbye() {
+			MyLog.d("AlarmService", "getGoodbye()");
+			Intent goodbyeIntent = new Intent();
+			goodbyeIntent.setAction("com.lbconsulting.homework253_lorenbak.GOODBYE");
+			this.sendBroadcast(goodbyeIntent);
+		}*/
 
 	private void startAlarm() {
-		mIsAlarmRunning = true;
-		status = ALARM_RUNNING;
-		alarmStartTime = Calendar.getInstance();
-		mHeartbeatHandler.postDelayed(mAlarmRunnable, 400);
+		MyLog.i("AlarmService", "startAlarm()");
+		if (!mIsAlarmRunning) {
+			mIsAlarmRunning = true;
+			status = ALARM_RUNNING;
+			alarmStartTime = Calendar.getInstance();
+			mHeartbeatHandler.postDelayed(mAlarmRunnable, 400);
+		}
 	}
 
 	private void stopAlarm() {
+		MyLog.i("AlarmService", "stopAlarm()");
 		mIsAlarmRunning = false;
 		status = ALARM_STOPPED;
 		numberOfBeeps = 0;
@@ -179,13 +196,14 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 	 * 
 	 * @return
 	 */
-	public String getHello() {
-		MyLog.d("AlarmService", "getHello()");
+	/*	public String getHello() {
+			MyLog.d("AlarmService", "getHello()");
 
-		return "Hello";
-	}
+			return "Hello";
+		}*/
 
 	public Bundle getStatus() {
+		MyLog.i("AlarmService", "getStatus()");
 		Bundle bundle = new Bundle();
 		bundle.putInt("status", status);
 		if (status == ALARM_RUNNING) {
@@ -201,13 +219,12 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 	@Override
 	public void onStart(Intent intent, int startId) {
 		MyLog.d("AlarmService", "onStart() intent: " + intent);
-		startAlarm();
 		super.onStart(intent, startId);
 	}
 
 	@Override
 	public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
-		MyLog.i("AlarmService", "SoundPool.OnLoadCompleteListener: onLoadComplete");
+		MyLog.i("AlarmService", "SoundPool.OnLoadCompleteListener: onLoadComplete()");
 		mSoundResources.put(sampleId, new SoundResource(sampleId, true, 1f));
 	}
 
