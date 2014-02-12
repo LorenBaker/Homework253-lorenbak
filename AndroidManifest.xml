@@ -32,7 +32,7 @@
 
         <service
             android:name="com.lbconsulting.homework253_lorenbak.services.AlarmService"
-            android:exported="true"
+            android:exported="false"
             android:process=":hw253service" >
         </service>
     </application>

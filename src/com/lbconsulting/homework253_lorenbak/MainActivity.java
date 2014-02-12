@@ -178,6 +178,7 @@ public class MainActivity extends Activity {
 		if (mServiceIsBound) {
 			MyLog.w("Main_ACTIVITY", "startService()... Service already bound!");
 		} else {
+			startService(new Intent(this, AlarmService.class));
 			bindService(new Intent(this, AlarmService.class), mConnection, Context.BIND_AUTO_CREATE);
 			mServiceIsBound = true;
 			/*findViewById(R.id.getGoodbyeButton).setEnabled(mServiceIsBound);

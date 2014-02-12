@@ -95,12 +95,58 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 		}
 	}
 
+	@Override
+	public void onCreate() {
+		MyLog.d("AlarmService", "onCreate()");
+		super.onCreate();
+
+		mSoundPool = new SoundPool(3, AudioManager.STREAM_MUSIC, 0);
+		mSoundPool.setOnLoadCompleteListener(this);
+
+		AssetManager am = this.getAssets();
+		AssetFileDescriptor afd;
+		try {
+			afd = am.openFd("beep08a.mp3");
+			mBeep08a = mSoundPool.load(afd, 1);
+			//afd.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		MyLog.d("AlarmService", "onStartCommand() intent: " + intent);
+
+		// START_NOT_STICKY - Icky We want to live on, live free!
+		return START_STICKY;
+	}
+
 	// Call for the actual bind
 	@Override
 	public IBinder onBind(Intent intent) {
 		MyLog.d("AlarmService", "onBind() intent: " + intent);
 		startAlarm();
 		return new UpdateBinderProxy();
+	}
+
+	@Override
+	public boolean onUnbind(Intent intent) {
+		MyLog.d("AlarmService", "onUnbind() intent: " + intent);
+		return super.onUnbind(intent);
+	}
+
+	@Override
+	public void onDestroy() {
+		MyLog.d("AlarmService", "onDestroy()");
+		//stopAlarm();
+
+		// LEARN: We are forcing an exit here just to show the :service process disappears
+		if (!mIsAlarmRunning) {
+			System.exit(0);
+		}
+
 	}
 
 	/**
@@ -119,7 +165,7 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 		mIsAlarmRunning = true;
 		status = ALARM_RUNNING;
 		alarmStartTime = Calendar.getInstance();
-		mHeartbeatHandler.postDelayed(mAlarmRunnable, 500);
+		mHeartbeatHandler.postDelayed(mAlarmRunnable, 400);
 	}
 
 	private void stopAlarm() {
@@ -153,54 +199,10 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 	}
 
 	@Override
-	public void onCreate() {
-		MyLog.d("AlarmService", "onCreate()");
-		super.onCreate();
-
-		mSoundPool = new SoundPool(3, AudioManager.STREAM_MUSIC, 0);
-		mSoundPool.setOnLoadCompleteListener(this);
-
-		AssetManager am = this.getAssets();
-		AssetFileDescriptor afd;
-		try {
-			afd = am.openFd("beep08a.mp3");
-			mBeep08a = mSoundPool.load(afd, 1);
-			//afd.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
 	public void onStart(Intent intent, int startId) {
 		MyLog.d("AlarmService", "onStart() intent: " + intent);
 		startAlarm();
 		super.onStart(intent, startId);
-	}
-
-	@Override
-	public boolean onUnbind(Intent intent) {
-		MyLog.d("AlarmService", "onUnbind() intent: " + intent);
-		return super.onUnbind(intent);
-	}
-
-	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		MyLog.d("AlarmService", "onStartCommand() intent: " + intent);
-
-		// START_NOT_STICKY - Icky We want to live on, live free!
-		return START_STICKY;
-	}
-
-	@Override
-	public void onDestroy() {
-		MyLog.d("AlarmService", "onDestroy()");
-		stopAlarm();
-
-		// LEARN: We are forcing an exit here just to show the :service process disappears
-		System.exit(0);
-
 	}
 
 	@Override
