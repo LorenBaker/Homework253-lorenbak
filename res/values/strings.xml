@@ -4,5 +4,8 @@
     <string name="app_name">Homework253-lorenbak</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
+    <string name="btnStart_Text">Start Alarm</string>
+    <string name="btnStop_Text">Stop Alarm</string>
+    <string name="tvStatus_Text">AlarmnNot started.</string>
 
 </resources>
