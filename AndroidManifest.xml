@@ -15,20 +15,14 @@
         android:theme="@style/AppTheme" >
         <activity
             android:name="com.lbconsulting.homework253_lorenbak.MainActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:launchMode="singleInstance" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <receiver android:name="com.lbconsulting.homework253_lorenbak.receivers.GoodbyeToastReceiver" >
-            <intent-filter>
-                <action android:name="com.lbconsulting.homework253_lorenbak.GOODBYE" >
-                </action>
-            </intent-filter>
-        </receiver>
 
         <service
             android:name="com.lbconsulting.homework253_lorenbak.services.AlarmService"

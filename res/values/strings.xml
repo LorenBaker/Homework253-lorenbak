@@ -7,5 +7,6 @@
     <string name="btnStart_Text">Start Alarm</string>
     <string name="btnStop_Text">Stop Alarm</string>
     <string name="tvStatus_Text">AlarmnNot started.</string>
+    <string name="alarm_running">HW253 Alarm Running</string>
 
 </resources>

@@ -10,15 +10,4 @@
         android:layout_height="wrap_content"
         android:text="@string/btnStart_Text" />
 
-    <Button
-        android:id="@+id/btnGetStatus"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Get Status" />
-
-    <TextView
-        android:id="@+id/serviceTextView"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent" />
-
 </LinearLayout>

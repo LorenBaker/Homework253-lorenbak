@@ -4,6 +4,5 @@ interface IAlarmService {
 
     void startAlarm();
 	void stopAlarm();
-	Bundle getStatus();
 	
 }

@@ -1,9 +1,13 @@
 package com.lbconsulting.homework253_lorenbak.services;
 
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
@@ -15,8 +19,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.support.v4.app.NotificationCompat;
 
+import com.lbconsulting.homework253_lorenbak.MainActivity;
 import com.lbconsulting.homework253_lorenbak.MyLog;
+import com.lbconsulting.homework253_lorenbak.R;
 
 public class AlarmService extends Service implements OnLoadCompleteListener {
 
@@ -24,6 +31,8 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 	public static final int ALARM_STOPPED = 11;
 	public static final int ALARM_SERVICE_NOT_BOUND = 12;
 	public static final int ALARM_SERVICE_STARTED = 13;
+
+	private int HW252ALARM = 100;
 
 	private int status = ALARM_SERVICE_NOT_BOUND;
 	private Calendar alarmStartTime;
@@ -36,8 +45,6 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 	private int mBeep08a;
 	private SoundPool mSoundPool;
 	private HashMap<Integer, SoundResource> mSoundResources = new HashMap<Integer, SoundResource>();
-
-	//private AudioManager mAudioManager;
 
 	private class SoundResource {
 
@@ -59,6 +66,7 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 
 			if (mIsAlarmRunning) {
 				numberOfBeeps++;
+
 				int threadID = android.os.Process.myTid();
 				StringBuilder sb = new StringBuilder();
 				sb.append("Alarm running: threadID = ");
@@ -66,8 +74,9 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 				sb.append("; Number of Beeps = ");
 				sb.append(numberOfBeeps);
 				MyLog.i("AlarmService", sb.toString());
-				//soundAlarm();
 
+				soundAlarm();
+				sendNotification(); // Yes I know that it is probably too much to send a notification every 5 seconds.
 				mHeartbeatHandler.postDelayed(this, 5000);
 			}
 		}
@@ -87,11 +96,6 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 
 	/** $REMOTE **/
 	public class UpdateBinderProxy extends IAlarmService.Stub {
-
-		@Override
-		public Bundle getStatus() throws RemoteException {
-			return AlarmService.this.getStatus();
-		}
 
 		@Override
 		public void startAlarm() throws RemoteException {
@@ -119,11 +123,53 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 		try {
 			afd = am.openFd("beep08a.mp3");
 			mBeep08a = mSoundPool.load(afd, 1);
-			//afd.close();
+			afd.close();
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void sendNotification() {
+
+		Intent hw253AlarmIntent = new Intent(this, MainActivity.class);
+
+		// Create PendingIntent
+		PendingIntent pendingHW253AlarmIntent = PendingIntent.getActivity(
+				this,
+				HW252ALARM,
+				hw253AlarmIntent,
+				PendingIntent.FLAG_UPDATE_CURRENT
+				);
+
+		// Format the strings to use for the Notification
+		String notificationTitle = getString(R.string.alarm_running);
+		Calendar now = Calendar.getInstance();
+		long elapsedTime = now.getTimeInMillis() - alarmStartTime.getTimeInMillis();
+		elapsedTime = elapsedTime / 1000;
+
+		StringBuilder sb = new StringBuilder();
+		NumberFormat nf = NumberFormat.getInstance();
+
+		sb.append("Elapsed time: ");
+		sb.append(nf.format(elapsedTime));
+		sb.append(" seconds; ");
+		sb.append(nf.format(numberOfBeeps));
+		sb.append(" total beeps!");
+
+		// Create and use a Book Notification
+
+		Notification hw253Notification = new NotificationCompat.Builder(this)
+				.setContentTitle(notificationTitle)
+				.setContentText(sb.toString())
+				.setContentIntent(pendingHW253AlarmIntent)
+				.setSmallIcon(android.R.drawable.ic_popup_reminder)
+				.build();
+
+		// Use the NotificationManager to notify
+		NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+		notificationManager.notify(HW252ALARM, hw253Notification);
+		MyLog.d("AlarmService", "sendNotification()");
 	}
 
 	@Override
@@ -140,7 +186,6 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 		MyLog.d("AlarmService", "onBind() intent: " + intent);
 		status = ALARM_STOPPED;
 		return new UpdateBinderProxy();
-
 	}
 
 	@Override
@@ -153,27 +198,9 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 	@Override
 	public void onDestroy() {
 		MyLog.d("AlarmService", "onDestroy()");
-		//stopAlarm();
-
-		// LEARN: We are forcing an exit here just to show the :service process disappears
-		/*		if (!mIsAlarmRunning) {
-					System.exit(0);
-				}*/
-
 	}
 
-	/**
-	 * Public method to expose functionality.
-	 * 
-	 * @return
-	 */
-	/*	public void getGoodbye() {
-			MyLog.d("AlarmService", "getGoodbye()");
-			Intent goodbyeIntent = new Intent();
-			goodbyeIntent.setAction("com.lbconsulting.homework253_lorenbak.GOODBYE");
-			this.sendBroadcast(goodbyeIntent);
-		}*/
-
+	// Public methods to expose functionality.
 	private void startAlarm() {
 		MyLog.i("AlarmService", "startAlarm()");
 		if (!mIsAlarmRunning) {
@@ -191,17 +218,6 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 		numberOfBeeps = 0;
 	}
 
-	/**
-	 * Public method to expose functionality.
-	 * 
-	 * @return
-	 */
-	/*	public String getHello() {
-			MyLog.d("AlarmService", "getHello()");
-
-			return "Hello";
-		}*/
-
 	public Bundle getStatus() {
 		MyLog.i("AlarmService", "getStatus()");
 		Bundle bundle = new Bundle();
@@ -214,12 +230,6 @@ public class AlarmService extends Service implements OnLoadCompleteListener {
 			bundle.putLong("numberOfBeeps", numberOfBeeps);
 		}
 		return bundle;
-	}
-
-	@Override
-	public void onStart(Intent intent, int startId) {
-		MyLog.d("AlarmService", "onStart() intent: " + intent);
-		super.onStart(intent, startId);
 	}
 
 	@Override
